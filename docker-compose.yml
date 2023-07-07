@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+
+  streamer:
+    container_name: streamer
+    image: sytacdocker/video-stream-server:latest
+    healthcheck:
+      test: "netstat -tulpn | grep 8080 || exit 1"
+      interval: 10s
+      timeout: 30s
+      retries: 20
+    restart: always
+    ports:
+      - '8080:8080'
+    networks:
+      - nbridge
+    expose:
+      - 8080
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '5'
+
+  backend:
+    container_name: harvester-backend
+    build: .
+    env_file: ./.env
+    restart: always
+    networks:
+      - nbridge
+    ports:
+      - '8082:8082'
+    depends_on:
+      streamer:
+        condition: service_healthy
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '5'
+
+
+networks:
+  nbridge:
+    driver: bridge
+
